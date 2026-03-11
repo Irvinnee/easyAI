@@ -1,3 +1,5 @@
+from rdflib.plugins.sparql.parserutils import value
+
 from easyAI import TwoPlayerGame
 
 # Convert D7 to (3,6) and back...
@@ -7,7 +9,7 @@ to_string = lambda move: " ".join(
 to_tuple = lambda s: ("ABCDEFGHIJ".index(s[0]), int(s[1:]) - 1)
 
 
-class Hexapawn(TwoPlayerGame):
+class Octospawn(TwoPlayerGame):
     """
     A nice game whose rules are explained here:
     http://fr.wikipedia.org/wiki/Hexapawn
@@ -17,19 +19,22 @@ class Hexapawn(TwoPlayerGame):
         self.size = M, N = size
         p = [[(i, j) for j in range(N)] for i in [0, M - 1]]
 
+
+
         for i, d, goal, pawns in [(0, 1, M - 1, p[0]), (1, -1, 0, p[1])]:
-            players[i].direction = d  # gracz 1 ma direction = 1, gracz 2 ma direction = -2 ( góra doł)
+            players[i].direction = d  # gracz 1 ma direction = 1, gracz 2 ma direction = -1 ( góra doł)
             players[i].goal_line = goal
-            players[i].pawns = pawns
+            players[i].pawns = {x: pawns[x] for x in range(len(pawns))}
+
 
         self.players = players
         self.current_player = 1
 
     def possible_moves(self):
         moves = []
-        opponent_pawns = self.opponent.pawns  # lista pionków przeciwnika
+        opponent_pawns = self.opponent.pawns.values()  # lista pionków przeciwnika
         d = self.player.direction #  kierunek ruchu aktualnego gracza
-        for i, j in self.player.pawns:
+        for i, j in self.player.pawns.values():
             if (i + d, j) not in opponent_pawns:  ## idziemy jedno pole do przodu   || warto by było sprawdzić też
                 # czy to nie jest granica planszy, albo czy nasz pionek tam nie stoi, bo na razie mamy tylko != opponent_paws
                 moves.append(((i, j), (i + d, j)))
@@ -41,12 +46,18 @@ class Hexapawn(TwoPlayerGame):
         return list(map(to_string, [(i, j) for i, j in moves]))  # napisy zwraca do wyświetlenia dla użytkownika
 
     def make_move(self, move):
+        removed_pawns = []
         move = list(map(to_tuple, move.split(" ")))  # zamieniamy A1 na współrzedne
-        ind = self.player.pawns.index(move[0])  # przesuwamy zawsze pierwszy pionek?
+        ind = self.player.pawns.values().index(move[0])  # przesuwamy zawsze pierwszy pionek?
         self.player.pawns[ind] = move[1]  # zmiana pozycji pionak na planszy
 
         if move[1] in self.opponent.pawns:  # czy było bicie?
+            removed_pawns.append(self.opponent.pawns.key().index(move[0]))
             self.opponent.pawns.remove(move[1])
+
+
+
+
 
     def lose(self):
         return any([i == self.opponent.goal_line for i, j in self.opponent.pawns]) or (  # spreawdzamy czy aktualny gracz przegrał
@@ -70,6 +81,8 @@ class Hexapawn(TwoPlayerGame):
                 ]
             )
         )
+        print(self.players[0].pawns[0])
+        print(self.players[1].pawns)
 
 
 if __name__ == "__main__":
@@ -77,6 +90,6 @@ if __name__ == "__main__":
 
     scoring = lambda game: -100 if game.lose() else 0
     ai = Negamax(10, scoring)
-    game = Hexapawn([AI_Player(ai), AI_Player(ai)])
+    game = Octospawn([AI_Player(ai), AI_Player(ai)])
     game.play()
     print("player %d wins after %d turns " % (game.opponent_index, game.nmove))
