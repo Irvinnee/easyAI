@@ -113,6 +113,7 @@ class Octospawn(TwoPlayerGame):
 
 
 
+
     def lose(self):
         return any([i == self.opponent.goal_line for i, j in self.opponent.pawns.values()]) or (  # spreawdzamy czy aktualny gracz przegrał
             self.possible_moves() == []
@@ -142,9 +143,8 @@ class Octospawn(TwoPlayerGame):
     def copy(self):
         return copy.deepcopy(self)
 
-    def make_move_no_chance(self, move):
-        move = list(map(to_tuple, move.split(" ")))  # zamieniamy A1 na współrzędne
-
+    def make_move_simple(self, move):
+        move = list(map(to_tuple, move.split(" ")))
         source = move[0]
         target = move[1]
 
@@ -155,17 +155,21 @@ class Octospawn(TwoPlayerGame):
                 break
 
         captured_id = None
-
         for idx, pos in list(self.opponent.pawns.items()):
             if pos == target:
                 captured_id = idx
                 break
 
-        self.player.pawns[ind] = target  # zmiana pozycji pionka na planszy
+        self.player.pawns[ind] = target
 
-        if captured_id is not None:  # czy było bicie?
-
+        if captured_id is not None:
             del self.opponent.pawns[captured_id]
+            self.removed_pawns[self.opponent_index].append(captured_id)
+
+        return captured_id is not None
+
+
+
 
 
 
