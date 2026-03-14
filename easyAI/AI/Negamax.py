@@ -4,12 +4,13 @@ and (optionnally), transposition tables.
 """
 
 import pickle
+import time
 
 LOWERBOUND, EXACT, UPPERBOUND = -1, 0, 1
 inf = float("infinity")
 
 
-def negamax(game, depth, origDepth, scoring, alpha=+inf, beta=-inf, tt=None):
+def negamax(game, depth, origDepth, scoring, alpha=+inf, beta=-inf, cond=True, tt=None):
     """
     This implements Negamax with transposition tables.
     This method is not meant to be used directly. See ``easyAI.Negamax``
@@ -92,7 +93,7 @@ def negamax(game, depth, origDepth, scoring, alpha=+inf, beta=-inf, tt=None):
             # best_move = move
             if depth == origDepth:
                 state.ai_move = move
-            if alpha >= beta:
+            if alpha >= beta and cond is True:
                 break
 
     if tt is not None:
@@ -107,6 +108,7 @@ def negamax(game, depth, origDepth, scoring, alpha=+inf, beta=-inf, tt=None):
             if (bestValue <= alphaOrig)
             else (LOWERBOUND if (bestValue >= beta) else EXACT),
         )
+
 
     return bestValue
 
@@ -160,17 +162,20 @@ class Negamax:
 
     """
 
-    def __init__(self, depth, scoring=None, win_score=+inf, tt=None):
+    def __init__(self, depth, scoring=None, win_score=+inf, tt=None, cond=True):
         self.scoring = scoring
         self.depth = depth
         self.tt = tt
         self.win_score = win_score
+        self.cond = cond
+        self.time = 0
+
 
     def __call__(self, game):
         """
         Returns the AI's best move given the current state of the game.
         """
-
+        start_time = time.time()
         scoring = (
             self.scoring if self.scoring else (lambda g: g.scoring())
         )  # horrible hack
@@ -182,6 +187,10 @@ class Negamax:
             scoring,
             -self.win_score,
             +self.win_score,
-            self.tt,
+            self.tt
+
+
         )
-        return game.ai_move
+
+        end_time = time.time()
+        return game.ai_move, end_time-start_time

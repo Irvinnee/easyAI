@@ -80,7 +80,7 @@ class TwoPlayerGame(ABC):
     def is_over(self):
         pass
 
-    def play(self, nmoves=1000, verbose=True):
+    def play(self, nmoves=1000, verbose=False):
         """
         Method for starting the play of a game to completion. If one of the
         players is a Human_Player, then the interaction with the human is via
@@ -98,6 +98,8 @@ class TwoPlayerGame(ABC):
         """
 
         history = []
+        times = 0
+        count_moves = 0
 
         if verbose:
             self.show()
@@ -107,7 +109,10 @@ class TwoPlayerGame(ABC):
             if self.is_over():
                 break
 
-            move = self.player.ask_move(self)
+            move, time = self.player.ask_move(self)
+            times += time
+            count_moves += 1
+
             history.append((deepcopy(self), move))
             self.make_move(move)
 
@@ -122,7 +127,7 @@ class TwoPlayerGame(ABC):
 
         history.append(deepcopy(self))
 
-        return history
+        return history, times/count_moves
 
     @property
     def opponent_index(self):

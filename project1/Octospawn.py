@@ -1,7 +1,15 @@
+from copy import deepcopy
+
+from sympy.abc import alpha
 
 from easyAI import TwoPlayerGame
+from itertools import product
+import time
+
+import copy
 
 import random
+inf = float("infinity")
 
 # Convert D7 to (3,6) and back...
 to_string = lambda move: " ".join(
@@ -16,8 +24,9 @@ class Octospawn(TwoPlayerGame):
     http://fr.wikipedia.org/wiki/Hexapawn
     """
 
-    def __init__(self, players, size=(4, 4)):
+    def __init__(self, players, chance, size=(4, 4)):
         self.size = M, N = size
+        self.chance = chance
         p = [[(i, j) for j in range(N)] for i in [0, M - 1]]
 
 
@@ -92,14 +101,14 @@ class Octospawn(TwoPlayerGame):
             self.removed_pawns[self.opponent_index].append(captured_id)
 
             # losujemy 10% tylko po zbiciu
-            if self.removed_pawns[self.opponent_index] and random.random() < 1.0:
+            if self.removed_pawns[self.opponent_index] and random.random() < self.chance:
                 pawn_id = random.choice(self.removed_pawns[self.opponent_index])
                 start_pos = self.start_positions[self.opponent_index][pawn_id]
 
                 # sprawdzamy, czy pole startowe jest wolne
-                if start_pos not in self.player.pawns.values() and start_pos not in self.opponent.pawns.values():
-                    self.opponent.pawns[pawn_id] = start_pos
-                    self.removed_pawns[self.opponent_index].remove(pawn_id)
+
+                self.opponent.pawns[pawn_id] = start_pos
+                self.removed_pawns[self.opponent_index].remove(pawn_id)
 
 
 
@@ -130,12 +139,68 @@ class Octospawn(TwoPlayerGame):
         print(self.players[1].pawns)
         print(self.removed_pawns)
 
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def make_move_no_chance(self, move):
+        move = list(map(to_tuple, move.split(" ")))  # zamieniamy A1 na współrzędne
+
+        source = move[0]
+        target = move[1]
+
+        ind = None
+        for idx, pos in self.player.pawns.items():
+            if pos == source:
+                ind = idx
+                break
+
+        captured_id = None
+
+        for idx, pos in list(self.opponent.pawns.items()):
+            if pos == target:
+                captured_id = idx
+                break
+
+        self.player.pawns[ind] = target  # zmiana pozycji pionka na planszy
+
+        if captured_id is not None:  # czy było bicie?
+
+            del self.opponent.pawns[captured_id]
+
+
+
+
+
 
 if __name__ == "__main__":
     from easyAI import AI_Player, Human_Player, Negamax
 
     scoring = lambda game: -100 if game.lose() else 0
-    ai = Negamax(10, scoring)
-    game = Octospawn([Human_Player(), Human_Player()])
-    game.play()
-    print("player %d wins after %d turns " % (game.opponent_index, game.nmove))
+    times = []
+
+    scores = [0,0]
+    avg_time = 0.0
+    for depth, cond in product([5,10], [True, False]):
+        ai= Negamax(depth, scoring, cond=cond)
+
+        print(f'głębokość {ai.depth}, pruning: {ai.cond}')
+        for chance in [0.1, 1.0]:
+            scores = [0,0]
+            avg_time = 0.0
+            print(f"szansunia {chance}")
+            for i in range(100):
+                g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
+
+                g.current_player = i % 2
+                _, time_per_game = g.play()
+                avg_time += time_per_game
+                scores[g.opponent_index -1] += 1
+                print("player %d wins after %d turns " % (g.opponent_index, g.nmove))
+                print(time_per_game)
+
+
+            print(scores)
+            print(avg_time/100)
+            times.append(f"głębokość {depth}, szansa {chance}, pruning {cond} czas {avg_time/100}")
+
+

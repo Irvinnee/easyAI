@@ -59,5 +59,6 @@ class AI_Player:
         self.name = name
         self.move = {}
 
+
     def ask_move(self, game):
         return self.AI_algo(game)
