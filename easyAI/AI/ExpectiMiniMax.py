@@ -27,8 +27,6 @@ class ExpectiMiniMax:
     def evaluate(self, game, maximizing_player):
         pass
 
-    def stochastic_successors(self, game, move):
-        pass
 
     def chance_value_after_move(self, game, move, depth, alpha, beta, maximizing_player):
         if game.is_over() or depth == 0:
@@ -41,20 +39,62 @@ class ExpectiMiniMax:
 
         # ruch bez losowości
         if not capt:
-            game.current_player = game.opponent_index
-            if game.current_player == maximizing_player:
-                return self.max_value(game, depth, alpha, beta, maximizing_player)
+            newGame.current_player = newGame.opponent_index
+            if newGame.current_player == maximizing_player:
+                return self.max_value(newGame, depth, alpha, beta, maximizing_player)
             else:
-                return self.min_value(game, depth, alpha, beta, maximizing_player)
+                return self.min_value(newGame, depth, alpha, beta, maximizing_player)
         # możliwe odrodzenia
         else:
-            poss_reborn = len(game.removed_paws)
-            """
-            """
+            removed_id =  newGame.removed_pawns[newGame.opponent_index]
+            available_start_pos = list(newGame.players[0].pawns.values()) + list(newGame.players[1].pawns.values())
+            possible_reborn = []
+            for id in removed_id:
+                start_pos = newGame.start_positions[newGame.opponent_index][id]
+                if start_pos in available_start_pos:
+                    possible_reborn.append(id)
+
+            if not possible_reborn:
+                newGame.current_player = newGame.opponent_index
+                if game.current_player == maximizing_player:
+                    return self.max_value(newGame, depth, alpha, beta, maximizing_player)
+                else:
+                    return self.min_value(newGame, depth, alpha, beta, maximizing_player)
+
+            expected_value = 0.0
 
 
+            # żaden pionek sie nie odradza
+            no_reborn_game = newGame.copy()
 
+            no_reborn_game.current_player = no_reborn_game.opponent_index
+            if no_reborn_game.current_player == maximizing_player:
+                no_reborn_val = self.max_value(no_reborn_game, depth, alpha, beta, maximizing_player)
+            else:
+                no_reborn_val = self.min_value(no_reborn_game, depth, alpha, beta, maximizing_player)
 
+            expected_value += (1 - newGame.chance) * no_reborn_val
+
+            # jeden pionek sie odradza
+
+            removed_poss = newGame.chance / len(possible_reborn)
+
+            for id in removed_poss:
+                removed_game = newGame.copy()
+                start_pos = removed_game.start_positions[removed_game.opponent_index][id]
+
+                removed_game.opponent.pawns[id] = start_pos
+                removed_game.removed_pawns[removed_game.opponent_index].remove(id)
+
+                removed_game.current_player = removed_game.opponent_index
+                if no_reborn_game.current_player == maximizing_player:
+                    reborn_val = self.max_value(removed_game, depth, alpha, beta, maximizing_player)
+                else:
+                    reborn_val = self.min_value(removed_game, depth, alpha, beta, maximizing_player)
+
+                expected_value += removed_poss * reborn_val
+
+        return expected_value
 
 
 
@@ -66,7 +106,7 @@ class ExpectiMiniMax:
         value = -inf
 
         for move in game.possible_moves():
-            leaf_val = self.chance_value_after_move(game, move, self.depth - 1, alpha, beta, maximizing_player)
+            leaf_val = self.chance_value_after_move(game, move, self.depth, alpha, beta, maximizing_player)
             value = max(value, leaf_val)
             alpha = max(alpha, value)
 
@@ -82,7 +122,7 @@ class ExpectiMiniMax:
         value = +inf
 
         for move in game.possible_moves():
-            leaf_val = self.chance_value_after_move(game, move, self.depth - 1, alpha, beta, maximizing_player)
+            leaf_val = self.chance_value_after_move(game, move, self.depth, alpha, beta, maximizing_player)
             value = min(value, leaf_val)
             beta = min(beta, value)
 
