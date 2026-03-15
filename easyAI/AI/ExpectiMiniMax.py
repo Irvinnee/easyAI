@@ -79,7 +79,7 @@ class ExpectiMiniMax:
 
             removed_poss = newGame.chance / len(possible_reborn)
 
-            for id in removed_poss:
+            for id in possible_reborn:
                 removed_game = newGame.copy()
                 start_pos = removed_game.start_positions[removed_game.opponent_index][id]
 

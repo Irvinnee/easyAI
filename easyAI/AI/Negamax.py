@@ -77,7 +77,7 @@ def negamax(game, depth, origDepth, scoring, alpha=+inf, beta=-inf, cond=True, t
         game.make_move(move)
         game.switch_player()
 
-        move_alpha = -negamax(game, depth - 1, origDepth, scoring, -beta, -alpha, tt)
+        move_alpha = -negamax(game, depth - 1, origDepth, scoring, -beta, -alpha, cond, tt)
 
         if unmake_move:
             game.switch_player()
@@ -187,9 +187,8 @@ class Negamax:
             scoring,
             -self.win_score,
             +self.win_score,
-            self.tt
-
-
+            self.cond,
+            self.tt,
         )
 
         end_time = time.time()

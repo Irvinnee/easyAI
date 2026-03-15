@@ -188,14 +188,14 @@ if __name__ == "__main__":
         ai= Negamax(depth, scoring, cond=cond)
 
         print(f'głębokość {ai.depth}, pruning: {ai.cond}')
-        for chance in [0.1, 1.0]:
+        for chance in [0.1, 0.0]:
             scores = [0,0]
             avg_time = 0.0
             print(f"szansunia {chance}")
             for i in range(100):
                 g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
 
-                g.current_player = i % 2
+                g.current_player = i % 2 + 1
                 _, time_per_game = g.play()
                 avg_time += time_per_game
                 scores[g.opponent_index -1] += 1
