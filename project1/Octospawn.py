@@ -27,6 +27,7 @@ class Octospawn(TwoPlayerGame):
     def __init__(self, players, chance, size=(4, 4)):
         self.size = M, N = size
         self.chance = chance
+        self.undo_stack = []
         p = [[(i, j) for j in range(N)] for i in [0, M - 1]]
 
 
@@ -94,6 +95,15 @@ class Octospawn(TwoPlayerGame):
                 captured_id = idx
                 break
 
+        undo_move = {
+            "player_index": self.current_player,
+            "pawn_index": ind,
+            "source": source,
+            "target": target,
+            "captured_id": captured_id,
+            "respawned_id": None,
+        }
+
         self.player.pawns[ind] = target  # zmiana pozycji pionka na planszy
 
         if captured_id is not None:  # czy było bicie?
@@ -109,10 +119,10 @@ class Octospawn(TwoPlayerGame):
 
                 self.opponent.pawns[pawn_id] = start_pos
                 self.removed_pawns[self.opponent_index].remove(pawn_id)
+                undo_move["respawned_id"] = pawn_id
 
 
-
-
+        self.undo_stack.append(undo_move)
 
     def lose(self):
         return any([i == self.opponent.goal_line for i, j in self.opponent.pawns.values()]) or (  # spreawdzamy czy aktualny gracz przegrał
@@ -168,24 +178,55 @@ class Octospawn(TwoPlayerGame):
 
         return captured_id is not None
 
+    def unmake_move(self, move):
+        move = self.undo_stack.pop()
+        player_index = move["player_index"]
+        pawn_index = move["pawn_index"]
+        source = move["source"]
+        target = move["target"]
+        captured_id = move["captured_id"]
+        respawned_id = move["respawned_id"]
+
+        self.players[player_index - 1].pawns[pawn_index] = source
+
+        if respawned_id is not None:
+            del self.opponent.pawns[respawned_id]
+            self.removed_pawns[self.opponent_index].append(respawned_id)
+            
+        if captured_id is not None:
+            self.opponent.pawns[captured_id] = target
+            self.removed_pawns[self.opponent_index].remove(captured_id)
+
+        
 
 
+    def _progress(self, player):
+        M, _ = self.size
+        return sum(i if player.direction == 1 else M - 1 - i for i, _ in player.pawns.values())
 
+    def scoring(self):
+        if self.lose():
+            return -1000
+        curr_progress = self._progress(self.player)
+        opp_progress = self._progress(self.opponent)
 
+        curr_num_pawns = len(self.player.pawns)
+        opp_num_pawns = len(self.opponent.pawns)
 
+        curr_moves = len(self.possible_moves())
+
+        return 10 * (curr_progress - opp_progress) + 100 * (curr_num_pawns - opp_num_pawns) + 5 * curr_moves
 
 
 
 if __name__ == "__main__":
     from easyAI import AI_Player, Human_Player, Negamax
-
-    scoring = lambda game: -100 if game.lose() else 0
     times = []
 
     scores = [0,0]
     avg_time = 0.0
     for depth, cond in product([5,10], [True, False]):
-        ai= Negamax(depth, scoring, cond=cond)
+        ai= Negamax(depth, cond=cond)
 
         print(f'głębokość {ai.depth}, pruning: {ai.cond}')
         for chance in [0.1, 0.0]:
@@ -205,6 +246,6 @@ if __name__ == "__main__":
 
             print(scores)
             print(avg_time/100)
-            times.append(f"głębokość {depth}, szansa {chance}, pruning {cond} czas {avg_time/100}")
+            times.append(f"głębokość {depth}, {"deterministyczna" if chance == 0.0 else "probabilistyczna"}, pruning {cond} czas {avg_time/100}")
 
 

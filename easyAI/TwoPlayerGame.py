@@ -154,7 +154,8 @@ class TwoPlayerGame(ABC):
         move. If the player is a Human_Player, then the interaction with the
         human is via the text terminal.
         """
-        return self.player.ask_move(self)
+        move, _ = self.player.ask_move(self)
+        return move
 
     def play_move(self, move):
         """
