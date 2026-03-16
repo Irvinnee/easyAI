@@ -1,7 +1,5 @@
 from copy import deepcopy
 
-from sympy.abc import alpha
-
 from easyAI import TwoPlayerGame
 from itertools import product
 import time
@@ -192,7 +190,7 @@ class Octospawn(TwoPlayerGame):
         if respawned_id is not None:
             del self.opponent.pawns[respawned_id]
             self.removed_pawns[self.opponent_index].append(respawned_id)
-            
+
         if captured_id is not None:
             self.opponent.pawns[captured_id] = target
             self.removed_pawns[self.opponent_index].remove(captured_id)
@@ -221,6 +219,7 @@ class Octospawn(TwoPlayerGame):
 
 if __name__ == "__main__":
     from easyAI import AI_Player, Human_Player, Negamax
+    from easyAI.AI.ExpectiMiniMax import ExpectiMiniMax
     times = []
 
     scores = [0,0]
@@ -228,11 +227,13 @@ if __name__ == "__main__":
     for depth, cond in product([5,10], [True, False]):
         ai= Negamax(depth, cond=cond)
 
-        print(f'głębokość {ai.depth}, pruning: {ai.cond}')
+        pruning_label = "z alfa-beta" if cond else "bez alfa-beta"
+        print(f'\nNegamax ({pruning_label}), głębokość {ai.depth}')
         for chance in [0.1, 0.0]:
             scores = [0,0]
             avg_time = 0.0
-            print(f"szansunia {chance}")
+            variant = "deterministyczna" if chance == 0.0 else "probabilistyczna"
+            print(f"wariant: {variant} (chance={chance})")
             for i in range(100):
                 g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
 
@@ -240,12 +241,29 @@ if __name__ == "__main__":
                 _, time_per_game = g.play()
                 avg_time += time_per_game
                 scores[g.opponent_index -1] += 1
-                print("player %d wins after %d turns " % (g.opponent_index, g.nmove))
-                print(time_per_game)
 
+            print(f"{scores[0]} : {scores[1]}  średni czas decyzji: {avg_time/100:.4f}s")
+            times.append(f"Negamax ({pruning_label}), głębokość {depth}, {variant}, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}")
 
-            print(scores)
-            print(avg_time/100)
-            times.append(f"głębokość {depth}, {"deterministyczna" if chance == 0.0 else "probabilistyczna"}, pruning {cond} czas {avg_time/100}")
+    for depth in [5, 10]:
+        ai = ExpectiMiniMax(depth)
 
+        print(f'\nExpectiMiniMax, głębokość {depth}')
+        scores = [0,0]
+        avg_time = 0.0
+        chance = 0.1
+        print(f"wariant: probabilistyczna (chance={chance})")
+        for i in range(100):
+            g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
 
+            g.current_player = i % 2 + 1
+            _, time_per_game = g.play()
+            avg_time += time_per_game
+            scores[g.opponent_index -1] += 1
+
+        print(f"{scores[0]} : {scores[1]}  średni czas decyzji: {avg_time/100:.4f}s")
+        times.append(f"ExpectiMiniMax, głębokość {depth}, probabilistyczna, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}")
+
+    print("\nPODSUMOWANIE=")
+    for t in times:
+        print(t)
