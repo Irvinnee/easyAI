@@ -48,11 +48,13 @@ class ExpectiMiniMax:
 
         newGame.switch_player()
 
-        if newGame.is_over() or depth == 0:
+        if newGame.is_over():
             return self.evaluate(newGame, maximizing_player)
 
         # nie było bicia
         if not capt:
+            if depth == 0:
+                return self.evaluate(newGame, maximizing_player)
             if newGame.current_player == maximizing_player:
                 return self.max_value(newGame, depth, alpha, beta, maximizing_player)
             else:
@@ -63,7 +65,9 @@ class ExpectiMiniMax:
         # żaden pionek sie nie odradza
         
         no_reborn_game = newGame.copy()
-        if no_reborn_game.current_player == maximizing_player:
+        if depth == 0:
+            no_reborn_val = self.evaluate(no_reborn_game, maximizing_player)
+        elif no_reborn_game.current_player == maximizing_player:
             no_reborn_val = self.max_value(no_reborn_game, depth, alpha, beta, maximizing_player)
         else:
             no_reborn_val = self.min_value(no_reborn_game, depth, alpha, beta, maximizing_player)
@@ -81,7 +85,9 @@ class ExpectiMiniMax:
             reborn_game.player.pawns[pid] = start_pos
             reborn_game.removed_pawns[reborn_game.current_player].remove(pid)
 
-            if reborn_game.current_player == maximizing_player:
+            if depth == 0:
+                reborn_val = self.evaluate(reborn_game, maximizing_player)
+            elif reborn_game.current_player == maximizing_player:
                 reborn_val = self.max_value(reborn_game, depth, alpha, beta, maximizing_player)
             else:
                 reborn_val = self.min_value(reborn_game, depth, alpha, beta, maximizing_player)

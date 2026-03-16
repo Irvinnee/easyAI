@@ -224,45 +224,59 @@ if __name__ == "__main__":
 
     scores = [0,0]
     avg_time = 0.0
-    for depth, cond in product([5,10], [True, False]):
+    for depth, cond in product([3,7], [True, False]):
         ai= Negamax(depth, cond=cond)
 
         pruning_label = "z alfa-beta" if cond else "bez alfa-beta"
         print(f'\nNegamax ({pruning_label}), głębokość {ai.depth}')
         for chance in [0.1, 0.0]:
             scores = [0,0]
+            starter_wins = 0
+            second_wins = 0
             avg_time = 0.0
             variant = "deterministyczna" if chance == 0.0 else "probabilistyczna"
             print(f"wariant: {variant} (chance={chance})")
             for i in range(100):
                 g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
 
-                g.current_player = i % 2 + 1
+                starter = i % 2 + 1
+                g.current_player = starter
                 _, time_per_game = g.play()
                 avg_time += time_per_game
                 scores[g.opponent_index -1] += 1
+                if g.opponent_index == starter:
+                    starter_wins += 1
+                else:
+                    second_wins += 1
 
-            print(f"{scores[0]} : {scores[1]}  średni czas decyzji: {avg_time/100:.4f}s")
-            times.append(f"Negamax ({pruning_label}), głębokość {depth}, {variant}, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}")
+            print(f"P1 {scores[0]} : P2 {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
+            times.append(f"Negamax ({pruning_label}), głębokość {depth}, {variant}, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}, zaczyn:{starter_wins} drugi:{second_wins})")
 
-    for depth in [5, 10]:
+    for depth in [3, 7]:
         ai = ExpectiMiniMax(depth)
 
         print(f'\nExpectiMiniMax, głębokość {depth}')
         scores = [0,0]
+        starter_wins = 0
+        second_wins = 0
         avg_time = 0.0
         chance = 0.1
         print(f"wariant: probabilistyczna (chance={chance})")
         for i in range(100):
             g = Octospawn([AI_Player(ai), AI_Player(ai)], chance)
 
-            g.current_player = i % 2 + 1
+            starter = i % 2 + 1
+            g.current_player = starter
             _, time_per_game = g.play()
             avg_time += time_per_game
             scores[g.opponent_index -1] += 1
+            if g.opponent_index == starter:
+                starter_wins += 1
+            else:
+                second_wins += 1
 
-        print(f"{scores[0]} : {scores[1]}  średni czas decyzji: {avg_time/100:.4f}s")
-        times.append(f"ExpectiMiniMax, głębokość {depth}, probabilistyczna, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}")
+        print(f"P1 {scores[0]} : P2 {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
+        times.append(f"ExpectiMiniMax, głębokość {depth}, probabilistyczna, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}, zaczyn:{starter_wins} drugi:{second_wins})")
 
     print("\nPODSUMOWANIE=")
     for t in times:
