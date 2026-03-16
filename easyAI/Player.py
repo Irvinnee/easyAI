@@ -40,12 +40,12 @@ class Human_Player:
             elif move.startswith("move #"):
                 # Fetch the corresponding move and return.
                 move = possible_moves[int(move[6:]) - 1]
-                return move
+                return move, 0.0
 
             elif str(move) in possible_moves_str:
                 # Transform the move into its real type (integer, etc. and return).
                 move = possible_moves[possible_moves_str.index(str(move))]
-                return move
+                return move, 0.0
 
 
 class AI_Player:
