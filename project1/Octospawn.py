@@ -108,17 +108,13 @@ class Octospawn(TwoPlayerGame):
             del self.opponent.pawns[captured_id]
             self.removed_pawns[self.opponent_index].append(captured_id)
 
-            # losujemy 10% tylko po zbiciu
-            if self.removed_pawns[self.opponent_index] and random.random() < self.chance:
-                pawn_id = random.choice(self.removed_pawns[self.opponent_index])
-                start_pos = self.start_positions[self.opponent_index][pawn_id]
-
-                # sprawdzamy, czy pole startowe jest wolne
-
-                self.opponent.pawns[pawn_id] = start_pos
-                self.removed_pawns[self.opponent_index].remove(pawn_id)
-                undo_move["respawned_id"] = pawn_id
-
+        # losowe odrodzenie po ruchu
+        if self.removed_pawns[self.opponent_index] and random.random() < self.chance:
+            pawn_id = random.choice(self.removed_pawns[self.opponent_index])
+            start_pos = self.start_positions[self.opponent_index][pawn_id]
+            self.opponent.pawns[pawn_id] = start_pos
+            self.removed_pawns[self.opponent_index].remove(pawn_id)
+            undo_move["respawned_id"] = pawn_id
 
         self.undo_stack.append(undo_move)
 

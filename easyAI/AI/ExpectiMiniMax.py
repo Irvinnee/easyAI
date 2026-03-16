@@ -39,20 +39,18 @@ class ExpectiMiniMax:
 
         newGame = game.copy()
 
-        # czy było zbicie?
-        capt = newGame.make_move_simple(move)
+        newGame.make_move_simple(move)
 
-        if capt:
-            # zbite pionki przeciwnika (przed switch_player, opponent_index = ten kogo zbito)
-            removed_id = list(newGame.removed_pawns[newGame.opponent_index])
+        # zbite pionki przeciwnika
+        removed_id = list(newGame.removed_pawns[newGame.opponent_index])
 
         newGame.switch_player()
 
         if newGame.is_over():
             return self.evaluate(newGame, maximizing_player)
 
-        # nie było bicia
-        if not capt:
+        # brak zbitych pionków
+        if not removed_id:
             if depth == 0:
                 return self.evaluate(newGame, maximizing_player)
             if newGame.current_player == maximizing_player:
@@ -74,7 +72,7 @@ class ExpectiMiniMax:
 
         expected_value += (1 - game.chance) * no_reborn_val
 
-        # jeden pionek sie odradza (po switch_player current_player = ten którego zbito)
+        # jeden pionek sie odradza
 
         reborn_prob = game.chance / len(removed_id)
 
