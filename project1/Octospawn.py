@@ -249,7 +249,7 @@ if __name__ == "__main__":
                 else:
                     second_wins += 1
 
-            print(f"P1 {scores[0]} : P2 {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
+            print(f"{scores[0]} : {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
             times.append(f"Negamax ({pruning_label}), głębokość {depth}, {variant}, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}, zaczyn:{starter_wins} drugi:{second_wins})")
 
     for depth in [3, 7]:
@@ -275,8 +275,38 @@ if __name__ == "__main__":
             else:
                 second_wins += 1
 
-        print(f"P1 {scores[0]} : P2 {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
+        print(f"{scores[0]} : {scores[1]}  (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
         times.append(f"ExpectiMiniMax, głębokość {depth}, probabilistyczna, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}, zaczyn:{starter_wins} drugi:{second_wins})")
+
+    chance = 0.1
+    asymmetric_configs = [
+        ("Negamax(d=3,ab) vs Negamax(d=7,ab)",
+         Negamax(3, cond=True), Negamax(7, cond=True)),
+        ("Negamax(d=3,ab) vs ExpectiMiniMax(d=3)",
+         Negamax(3, cond=True), ExpectiMiniMax(3)),
+        ("Negamax(d=7,ab) vs ExpectiMiniMax(d=7)",
+         Negamax(7, cond=True), ExpectiMiniMax(7)),
+    ]
+
+    for label, ai1, ai2 in asymmetric_configs:
+        print(f"\n{label} (chance={chance})")
+        scores = [0, 0]
+        starter_wins = 0
+        second_wins = 0
+        avg_time = 0.0
+        for i in range(100):
+            g = Octospawn([AI_Player(ai1), AI_Player(ai2)], chance)
+            starter = i % 2 + 1
+            g.current_player = starter
+            _, time_per_game = g.play()
+            avg_time += time_per_game
+            scores[g.opponent_index - 1] += 1
+            if g.opponent_index == starter:
+                starter_wins += 1
+            else:
+                second_wins += 1
+        print(f"{scores[0]} :{scores[1]} (zaczynający: {starter_wins}, drugi: {second_wins})  śr. czas: {avg_time/100:.4f}s")
+        times.append(f"{label}, chance={chance}, czas {avg_time/100:.4f}s, P1:{scores[0]} P2:{scores[1]}, zaczyn:{starter_wins} drugi:{second_wins})")
 
     print("\nPODSUMOWANIE=")
     for t in times:
